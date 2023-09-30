@@ -40,4 +40,12 @@ export const addContact = async ({ name, email, phone }) => {
   return newContact;
 };
 
-export const updateContact = async (contactId, body) => {};
+export const updateContact = async (contactId, body) => {
+  const contacts = await listContacts();
+  const contactIndex = contacts.findIndex((task) => task.id === contactId);
+  if (contactIndex === -1) {
+    throw new Error("Task not found");
+  }
+  contacts.splice(contactIndex, 1, { ...contacts[contactIndex], ...body });
+  return contacts[contactIndex];
+};
