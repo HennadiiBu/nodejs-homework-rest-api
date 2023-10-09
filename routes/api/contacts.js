@@ -1,42 +1,79 @@
 import {
-  addContact,
-  getContactById,
-  listContacts,
-  removeContact,
-  updateContact,
-} from "../../models/contacts.js";
+  contactAddSchema,
+  contactUpdateFavoriteSchema,
+} from "../../models/contact.js";
+import validateBody from "../../decorators/validateBode.js";
+import { Contact } from "../../models/contact.js";
 
 import express from "express";
+import HttpError from "../../helpers/HttpErrors.js";
+import isValidId from "../../middlewares/isValidId.js";
+
+const contactsAddValidate = validateBody(contactAddSchema);
+const contactsUpdateFavoriteValidate = validateBody(
+  contactUpdateFavoriteSchema
+);
 
 const contactsRouter = express.Router();
 
+//...............GET ALL CONTACTS...........................
 contactsRouter.get("/", async (req, res, next) => {
-  const result = await listContacts();
+  const result = await Contact.find({}, "-createdAt -updatedAt");
   res.json(result);
 });
 
-contactsRouter.get("/:contactId", async (req, res, next) => {
+//...............GET ONE CONTACT by ID...........................
+contactsRouter.get("/:contactId", isValidId, async (req, res, next) => {
   const { contactId } = req.params;
 
- const result = await getContactById(contactId);
+  const result = await Contact.findById(contactId, "-createdAt -updatedAt");
+
+  if (!result) {
+    throw HttpError(404, `Contact with id ${contactId} not found`);
+  }
+
   res.json(result);
 });
 
-contactsRouter.post("/", async (req, res, next) => {
-  const result = await addContact(req.body);
-  res.json(result);
+//...............ADD CONTACT...........................
+contactsRouter.post("/", contactsAddValidate, async (req, res, next) => {
+  const result = await Contact.create(req.body);
+  res.status(201).json(result);
 });
 
-contactsRouter.delete("/:contactId", async (req, res, next) => {
+//...............DELETE ONE CONTACT by ID...........................
+contactsRouter.delete("/:contactId", isValidId, async (req, res, next) => {
   const { contactId } = req.params;
-  const result = await removeContact(contactId);
+  const result = await Contact.findByIdAndDelete(contactId);
   res.json(result);
 });
 
-contactsRouter.patch("/:contactId", async (req, res, next) => {
-  const { contactId } = req.params;
-  const result = await updateContact(contactId, req.body);
-  res.json(result);
-});
+//...............UPDATE ONE CONTACT by ID...........................
+contactsRouter.put(
+  "/:contactId",
+  isValidId,
+  contactsAddValidate,
+  async (req, res, next) => {
+    const { contactId } = req.params;
+    const result = await Contact.findByIdAndUpdate(contactId, req.body, {
+      new: true,
+    });
+    res.json(result);
+  }
+);
+
+//...............UPDATE ONE CONTACT by ID (FAVORITE)...........................
+contactsRouter.patch(
+  "/:contactId/favorite",
+  isValidId,
+  contactsUpdateFavoriteValidate,
+  async (req, res, next) => {
+    const { contactId } = req.params;
+    const result = await Contact.findByIdAndUpdate(contactId, req.body, {
+      new: true,
+    });
+    res.json(result);
+  }
+);
 
 export default contactsRouter;
