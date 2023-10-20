@@ -1,5 +1,4 @@
 import { Schema, model } from "mongoose";
-import Joi from "joi";
 
 const contactSchema = new Schema(
   {
@@ -17,22 +16,14 @@ const contactSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      // required: true,
+    },
   },
   { versionKey: false, timestamps: true }
 );
-
-export const contactAddSchema = Joi.object({
-  name: Joi.string().required().messages({
-    "any.required": `"name" required field`,
-  }),
-  email: Joi.string().required(),
-  phone: Joi.string().required(),
-  favorite: Joi.bool(),
-});
-
-export const contactUpdateFavoriteSchema = Joi.object({
-  favorite: Joi.bool().required(),
-});
 
 contactSchema.post("save", (error, data, next) => {
   error.status = 400;
@@ -51,4 +42,4 @@ contactSchema.post("findOneAndUpdate", (error, data, next) => {
 
 export const Contact = model("contact", contactSchema);
 
-// export default Contact;
+
