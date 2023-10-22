@@ -7,6 +7,7 @@ import validateBody from "../../decorators/validateBode.js";
 import isValidId from "../../middlewares/isValidId.js";
 import contactsController from "../../controllers/contacts-controller.js";
 import authenticate from "../../middlewares/authenticate.js";
+import upload from "../../middlewares/upload.js";
 
 const contactsAddValidate = validateBody(contactAddSchema);
 const contactsUpdateFavoriteValidate = validateBody(
@@ -24,7 +25,12 @@ contactsRouter.get("/", contactsController.getAllContacts);
 contactsRouter.get("/:contactId", isValidId, contactsController.getContactById);
 
 //...............ADD CONTACT...........................
-contactsRouter.post("/", contactsAddValidate, contactsController.addContact);
+contactsRouter.post(
+  "/",
+  upload.single("avatar"),
+  contactsAddValidate,
+  contactsController.addContact
+);
 
 //...............DELETE ONE CONTACT by ID...........................
 contactsRouter.delete(
