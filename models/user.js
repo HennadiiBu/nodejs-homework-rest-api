@@ -1,5 +1,4 @@
 import {Schema, model} from "mongoose";
-import Joi from "joi";
 
 import { handleSaveError, runValidatorsAtUpdate } from "./hooks.js";
 
@@ -21,6 +20,9 @@ const userSchema = new Schema({
         minlength: 6,
         required: true,
     },
+    avatarURL: {
+        type: String,
+    },
     token: {
         type: String,
     }
@@ -32,16 +34,7 @@ userSchema.pre("findOneAndUpdate", runValidatorsAtUpdate);
 
 userSchema.post("findOneAndUpdate", handleSaveError);
 
-export const userSignupSchema = Joi.object({
-    username: Joi.string().required(),
-    email: Joi.string().pattern(emailRegexp).required(),
-    password: Joi.string().min(6).required(),
-})
 
-export const userSigninSchema = Joi.object({
-    email: Joi.string().pattern(emailRegexp).required(),
-    password: Joi.string().min(6).required(),
-})
 
 const User = model("user", userSchema);
 

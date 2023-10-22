@@ -1,5 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import path from "path";
+import fs from "fs/promises";
+import Jimp from "jimp";
+
+import gravatar from "gravatar";
 
 import User from "../models/user.js";
 
@@ -9,22 +14,29 @@ import ctrlWrapper from "../decorators/ctrlWrapper.js";
 
 const { JWT_SECRET } = process.env;
 
-const signup = async(req, res)=> {
-    const {email, password} = req.body;
-    const user = await User.findOne({email});
-    if(user) {
-        throw HttpError(409, `${email} already in use`)
-    }
+const avatarsPath = path.resolve("public", "avatars");
 
-    const hashPassword = await bcrypt.hash(password, 10);
+const signup = async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (user) {
+    throw HttpError(409, `${email} already in use`);
+  }
 
-    const newUser = await User.create({...req.body, password: hashPassword});
+  const hashPassword = await bcrypt.hash(password, 10);
 
-    res.status(201).json({
-        username: newUser.username,
-        email: newUser.email,
-    })
-}
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL: gravatar.url(email),
+  });
+
+  res.status(201).json({
+    username: newUser.username,
+    email: newUser.email,
+    avatarURL: gravatar.url(email),
+  });
+};
 
 const signin = async (req, res) => {
   const { email, password } = req.body;
@@ -68,9 +80,34 @@ const signout = async (req, res) => {
   });
 };
 
+const changeAvatar = async (req, res) => {
+  const { _id } = req.user;
+
+  if (!_id) {
+    throw HttpError(401, "Not authorized");
+  }
+
+  const { path: oldPath, filename } = req.file;
+  const newPath = path.join(avatarsPath, filename);
+
+  await fs.rename(oldPath, newPath);
+
+  const image = await Jimp.read(newPath);
+  image.resize(250, 250);
+  await image.writeAsync(newPath);
+
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL: avatarURL });
+
+  res.json({
+    message: `"avatarURL": ${avatarURL}`,
+  });
+};
+
 export default {
   signup: ctrlWrapper(signup),
   signin: ctrlWrapper(signin),
   getCurrent: ctrlWrapper(getCurrent),
   signout: ctrlWrapper(signout),
+  changeAvatar: ctrlWrapper(changeAvatar),
 };
