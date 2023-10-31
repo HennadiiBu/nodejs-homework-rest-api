@@ -10,9 +10,11 @@ import {
 } from "../../utils/validations/contactValidationSchemas.js";
 import authenticate from "../../middlewares/authenticate.js";
 import upload from "../../middlewares/upload.js";
+import { emailSchema } from "../../utils/validations/emailSchema.js";
 
 const userSignupValidate = validateBody(userSignupSchema);
 const userSigninValidate = validateBody(userSigninSchema);
+const emailValidate = validateBody(emailSchema);
 
 const authRouter = express.Router();
 
@@ -30,5 +32,9 @@ authRouter.patch(
   authenticate,
   authController.changeAvatar
 );
+
+authRouter.get("/verify/:verificationToken", authController.verifyEmail);
+
+authRouter.post("/verify", emailValidate, authController.resendVerifyEmail);
 
 export default authRouter;
